@@ -1,0 +1,458 @@
+<!DOCTYPE html> 
+<html> 
+  <head> 
+    <title>NEPTUNE Observatory Fishing Hits Google Earth App</title> 
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" /> 
+    <meta name="description" content="A simple Google Earth app to plot lat/long near the NEPTUNE Observatory" /> 
+	<link rel="stylesheet" type="text/css" href="style.css"> 
+   
+  </head> 
+  <body onload='init()'> 
+    <div id="titlebox">
+      <h1 id="title">Neptune Observatory</h1>
+    </div>
+    <div id="sidebar"> 
+      <h2 id="sidebartitle">Control Panel</h2>
+      <hr />
+      <table> 
+        <tr><td>Centre: </td><td><span id='centre'></span></td></tr> 
+        <tr><td>Vertex: </td><td><span id='outer'></span></td></tr> 
+        <tr><td>Radius: </td><td><span id='rad'></span></td></tr> 
+        <tr><td>Bearing: </td><td><span id='bear'></span></td></tr> 
+        <tr><td>Perimeter: </td><td><span id='per'></span></td></tr> 
+        <tr><td>Area: </td><td><span id='area'></span></td></tr>
+        <tr><td>Depth: </td><td><span id='ground-altitude'></span></td></tr>
+        <tr><td>Depth x 2: </td><td><span id='ground-alt'></span></td></tr>
+        <tr><td><form id="shape" action='javascript:void(0);'><p> 
+          <select name="polygon" id="polygonselect" onchange='pm.numsides = this.value; pm.drawPolygon()' class="s"> 
+            <option value="25" class="vs">Circle</option> 
+            <option value="2" class="vs">Line</option> 
+            <option value="3" class="vs">Triangle</option> 
+            <option value="4" class="vs">Square</option> 
+            <option value="5" class="vs">Pentagon</option> 
+            <option value="6" class="vs">Hexagon</option> 
+            <option value="7" class="vs">Heptagon</option> 
+            <option value="8" class="vs">Octagon</option> 
+            <option value="9" class="vs">Nonagon</option> 
+            <option value="10" class="vs">Decagon</option> 
+            <option value="11" class="vs">Hendecagon</option> 
+            <option value="12" class="vs">Dodecagon</option> 
+          </select></p></form></td><td> 
+        <form>
+
+      </table> 
+      <hr /> 
+      <li>Drag pushpins to size, locate and rotate.<br />
+      <li>Alt + mouse, moves the polygon to a new location.<br />
+      <hr />
+      <h3>Fly to Latitude/Longitude</h3>
+      <p>Enter the latitude and longitude, in decimal degrees, reported by the vessel.</p>
+       
+      <form id="fishinghit-movelatlong">
+        <label for="fishinghit-movelatlong-lat">DD Latitude<br /></label><input type="text" id="fishinghit-movelatlong-lat"> <br> 
+        <label for="fishinghit-movelatlong-long">DD Longitude<br /></label><input type="text" id="fishinghit-movelatlong-long"> <br> 
+        <input type="submit" value="Show Point">
+      </form>
+      <hr />
+        
+      <form>
+        <label for="fishinghit-movelatlong-lat1">Latitude<br /></label><input type="text" id="fishinghit-movelatlong-lat1"> <br> 
+        <label for="fishinghit-movelatlong-long1">Longitude<br /></label><input type="text" id="fishinghit-movelatlong-long1">  <br> 
+        <input type="submit" value="Show Point">
+      </form>
+      
+    </div>
+      
+    <div id='map3d_container'> 
+      <div id='map3d'></div> 
+    </div> 
+
+    <p id='smallprint'>
+      Created by <a href='https://twitter.com/jstephaniuk' target="_blank">James Stephaniuk </a>2013
+    </p>
+
+<script type="text/javascript" src="http://www.google.com/jsapi?key=ABQIAAAAuPsJpk3MBtDpJ4G8cqBnjRRaGTYH6UMl8mADNa0YKuWNNa8VNxQCzVBXTx2DYyXGsTOxpWhvIG7Djw"></script> 
+<script type="text/javascript"> 
+google.load("earth", "1.008", {
+    'other_params': 'sensor=false'
+});
+
+var ge = null; // Google Earth global variable
+var pm = null; // Polygon global variable
+
+function init() {
+    google.earth.createInstance("map3d", initCB, failureCB);
+
+}
+
+function initCB(object) {
+    ge = object;
+
+    ge.getWindow().setVisibility(true); // make map window visible
+    ge.getOptions().setStatusBarVisibility(false); // visiblity of status bar at bottom of map window
+    ge.getOptions().setScaleLegendVisibility(false); // visiblity of scale bar at bottom left of map window
+    ge.getOptions().setOverviewMapVisibility(false); // visiblity of world map at bottom right of map window
+    //ge.getOptions().setMapType(ge.MAP_TYPE_SKY); // sky mode
+    //var navControl = ge.getNavigationControl();     // displays navigation controls at right of map window
+    //navControl.setVisibility(ge.VISIBILITY_AUTO);   // auto-hide the nav controls. visible on hover over
+    //ge.getLayerRoot().enableLayerById(ge.LAYER_BORDERS, true); // adds placenames and borders layer
+
+    // listen for the click event on the globe and window for depth/altitude at cursor location 
+    google.earth.addEventListener(ge.getWindow(), 'mousemove', function (event) {
+        var statusHTML = 'N/A'; // no elev info if cursor not on globe
+        if (event.getDidHitGlobe()) {
+            var latitude = event.getLatitude(); // latitude at cursor location
+            var longitude = event.getLongitude(); // longitude at cursor location
+
+            var groundAltitude = ge.getGlobe().getGroundAltitude(latitude, longitude); // get ground elev/depth at cursor location
+            if (groundAltitude) {
+                statusHTML = '<span style="color:#FF69B6; font-weight:bold;">' + /*CHECK*/
+                    -(groundAltitude.toFixed(2)) + ' meters</span>'; // negative altitude so depth is positive
+            }
+        }
+
+        document.getElementById('ground-altitude').innerHTML = statusHTML; // display elev/depth on sidebar
+    });
+
+
+
+    // listen to the click event on the globe and window
+    google.earth.addEventListener(ge.getWindow(), 'mousemove', function (event) {
+
+        var statusHTML = 'N/A';
+        if (event.getDidHitGlobe()) {
+            var latitude = event.getLatitude();
+            var longitude = event.getLongitude();
+
+            var groundAlt = ge.getGlobe().getGroundAltitude(latitude, longitude);
+            var groundAlt = groundAlt * 2;
+            //var groundAlt = groundAlt/1000;
+            if (groundAlt) {
+                statusHTML = '<span style="color:#FF69B7; font-weight:bold;">' +
+                    -(groundAlt.toFixed(2)) + ' meters</span>'; // negative altitude so depth is positive
+            }
+        }
+
+        document.getElementById('ground-alt').innerHTML = statusHTML;
+
+    });
+
+
+    function finished(object) {
+
+        ge.getFeatures().appendChild(object);
+
+    }
+
+    // fetch the KML of backbone and nodes. *These should be separated to individual layers w/ visibility options* 
+    var url = 'http://www.neptunecanada.ca/content-files/kml/Barkley_Canyon_Route_Survey.kml';
+    google.earth.fetchKml(ge, url, finished);
+
+
+    /////////////LEGEND (via Screen Overlay)///////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //Add legend (currently a placeholder)
+    //  var screenOverlay = ge.createScreenOverlay('');
+
+    // Set the visibility to false while we construct the overlay
+    // screenOverlay.setVisibility(false);
+
+    // this href can point to a static image of the desired legend. *will most likely be cut in favour of check box layer/legend design*
+    //var icon = ge.createIcon('');
+    //icon.setHref('Hyper link to static legend image'); 
+    //screenOverlay.setIcon(icon);
+
+    // Position the overlay.  ScreenXY(0,0) is mapped to OverlayXY(0,0). Currently at bottom left
+    //var screenXY = screenOverlay.getScreenXY();
+    //screenXY.setXUnits(ge.UNITS_PIXELS);
+    //screenXY.setYUnits(ge.UNITS_PIXELS);
+    //screenXY.setX(0);
+    //screenXY.setY(0);
+
+    //var overlayXY = screenOverlay.getOverlayXY();
+    //overlayXY.setXUnits(ge.UNITS_PIXELS);
+    //overlayXY.setYUnits(ge.UNITS_PIXELS);
+    //overlayXY.setX(0);
+    //overlayXY.setY(0);
+
+    // Set object's size in fractions of the 3d view window.  By setting
+    // to (1, 1), this image will cover the entire Earth window.
+    //var overlaySize = screenOverlay.getSize()
+    //overlaySize.setXUnits(ge.UNITS_FRACTION);
+    //overlaySize.setYUnits(ge.UNITS_FRACTION);
+    //overlaySize.setX(.2);
+    //overlaySize.setY(.5);
+
+    //screenOverlay.setVisibility(true); // visibility of legend (screen overlay) in map window
+
+    //ge.getFeatures().appendChild(screenOverlay);
+
+    //////////End Legend//////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    //Fly to Northeast Pacific
+    var la = ge.createLookAt('');
+    la.set(47, -126.5, 0, ge.ALTITUDE_RELATIVE_TO_GROUND,
+        0, 0, 1000000);
+    ge.getView().setAbstractView(la);
+
+    var i = 0
+    if (i < 2) {
+        pm = new Polygon(47, -126, 47, -126.5, document.getElementById('polygonselect').value); // place new polygon at these coordinates
+        i = i + 1
+    }
+
+}
+
+var pi = Math.PI; // 3.1415926535 ect...
+
+
+//Polygon constructor
+
+function Polygon(lat, lon, lata, lona, sides) {
+    var me = this;
+    me.numsides = sides;
+    me.cent = new PM(lat, lon, 'centre', 'ff0000ff'); // polygon inner pushpin alpha, B, G, R
+    me.rad = new PM(lata, lona, 'outer', 'ff00ff00'); // polygon outter pushpin alpha, B, G, R 
+    me.setBearDist();
+
+    var lineStringPlacemark = ge.createPlacemark('');
+    me.lineString = ge.createLineString('');
+    lineStringPlacemark.setGeometry(me.lineString);
+    me.lineString.setTessellate(true);
+    me.drawPolygon();
+    ge.getFeatures().appendChild(lineStringPlacemark);
+    lineStringPlacemark.setStyleSelector(ge.createStyle(''));
+    me.lineStyle = lineStringPlacemark.getStyleSelector().getLineStyle();
+
+    google.earth.addEventListener(ge.getGlobe(), "mousemove", function (event) {
+        me.movePMLoc(event);
+    });
+    google.earth.addEventListener(ge.getGlobe(), "mousedown", function (event) {
+        me.completelyNewLoc(event);
+    });
+
+}
+
+// calculates bearing of outter pushpin relative to inner pushpin
+Polygon.prototype.setBearDist = function () {
+    this.bear = bearing(this.cent.lat, this.cent.lon, this.rad.lat, this.rad.lon);
+    this.dist = distance(this.cent.lat, this.cent.lon, this.rad.lat, this.rad.lon);
+    document.getElementById('rad').innerHTML = this.dist.toPrecision(6).toString() + ' km';
+    document.getElementById('bear').innerHTML = this.bear.toDeg().toPrecision(5).toString() + ' deg';
+}
+
+// calculates distance between the polygon pushpins (e.g. circle radius)  
+Polygon.prototype.setRad = function () {
+    var latlon = destination(this.cent.lat, this.cent.lon, this.dist, this.bear);
+    this.rad.setLoc(latlon[0], latlon[1]);
+}
+
+// colour of polygon 
+Polygon.prototype.colour = function (col) {
+    this.lineStyle.getColor().set(col);
+}
+
+// draw the Polygon
+Polygon.prototype.drawPolygon = function () {
+    var latlon;
+    this.lineString.getCoordinates().clear();
+    for (i = 0; i <= this.numsides; i++) {
+        latlon = destination(this.cent.lat, this.cent.lon, this.dist, this.bear + i * 2 * pi / this.numsides);
+        this.lineString.getCoordinates().pushLatLngAlt(latlon[0], latlon[1], 0);
+    }
+    this.areaCircum();
+}
+
+//beef
+
+function PM(lat, lon, name, colour, altitude) { // Create Placemark
+    var me = this;
+    var depth = ge.getGlobe().getGroundAltitude(lat, lon)
+    depth = depth.toFixed(0);
+
+    me.active = false;
+    me.name = name;
+    me.placemark = ge.createPlacemark('');
+    ge.getFeatures().appendChild(me.placemark);
+    me.point = ge.createPoint('');
+    me.placemark.setStyleSelector(ge.createStyle(''));
+    var IconStyle = me.placemark.getStyleSelector().getIconStyle();
+    IconStyle.getColor().set(colour);
+    IconStyle.getHotSpot().setXUnits(ge.UNITS_FRACTION);
+    IconStyle.getHotSpot().setYUnits(ge.UNITS_FRACTION);
+    IconStyle.getHotSpot().setX(0.5);
+    IconStyle.getHotSpot().setY(0.5);
+    me.setLoc(lat, lon);
+    me.placemark.setGeometry(me.point);
+    me.placemark.setName("Depth: " + depth + " m");
+    google.earth.addEventListener(me.placemark, "mousedown", function (event) {
+        me.draw(event);
+    });
+    google.earth.addEventListener(me.placemark, "mouseup", function (event) {
+        me.undraw(event);
+    });
+}
+
+
+
+PM.prototype.setLoc = function (lat, lon) { // set location of placemark.
+    this.lat = lat.toRad();
+    this.lon = lon.toRad();
+    this.point.setLatLng(lat, lon.fixLon());
+    document.getElementById(this.name).innerHTML = lat.toPrecision(7).toString() + ' , ' + lon.toPrecision(7).toString();
+}
+
+Polygon.prototype.movePMLoc = function (kmlEvent) {
+    if (!this.rad.active && !this.cent.active) {
+        this.colour('ffffffff'); // polygon alpha, B, G, R
+    } else {
+        kmlEvent.preventDefault();
+        this.colour('ffc0c0c0');
+        if (this.rad.active) {
+            this.rad.setLoc(kmlEvent.getLatitude(), kmlEvent.getLongitude());
+            this.setBearDist();
+            this.drawPolygon();
+        } else { // only pick up centre placemark if vertex placemark not selected
+            this.cent.setLoc(kmlEvent.getLatitude(), kmlEvent.getLongitude());
+            this.setRad();
+            this.drawPolygon();
+        }
+    }
+}
+
+Polygon.prototype.completelyNewLoc = function (kmlEvent) {
+
+    if (kmlEvent.getAltKey()) {
+        this.cent.active = false;
+        this.rad.active = true;
+        this.cent.setLoc(kmlEvent.getLatitude(), kmlEvent.getLongitude());
+        this.rad.setLoc(kmlEvent.getLatitude(), kmlEvent.getLongitude());
+        this.colour('ffc0c0c0');
+    }
+}
+
+// allows polygon to be grabbed, moved and sized using the pushpins
+PM.prototype.draw = function () {
+    this.active = true;
+}
+
+// allows polygon to be dropped after grabbing
+PM.prototype.undraw = function () {
+    this.active = false;
+}
+
+
+
+
+Polygon.prototype.areaCircum = function () { // compute area and circumference of Polygon
+
+    var area = 0;
+    var circum = 0;
+    var latlon;
+    if (this.numsides == 25) { // area of spherical circle = 2*pi*R^2*(1-cos(radius))
+        area = 2 * pi * 6371 * 6371 * (1 - Math.cos(this.dist / 6371));
+        circum = 2 * pi * 6371 * (Math.sin(this.dist / 6371)); // 6371 is approx. equal to the volumetric radius in km of the Earth
+    } else if (this.numsides != 2) { // Spherical Polygon of n sides, theta is sum of internal angles: area = (theta-(n-2)*pi)*R^2                
+        var latlon = destinationr(0, 0, this.dist, pi);
+        var latlon2 = destinationr(0, 0, this.dist, pi - 2 * pi / this.numsides);
+        var ang = 2 * bearing(latlon[0], latlon[1], latlon2[0], latlon2[1]);
+        area = ((this.numsides * ang) - (this.numsides - 2) * pi) * 6371 * 6371;
+        circum = this.numsides * distance(latlon[0], latlon[1], latlon2[0], latlon2[1]);
+    }
+    document.getElementById('per').innerHTML = circum.toPrecision(7).toString() + ' km';
+    document.getElementById('area').innerHTML = area.toPrecision(8).toString() + ' km<sup>2</sup>';
+}
+
+Number.prototype.toRad = function () { // convert degrees to radians
+    return this * pi / 180;
+}
+
+Number.prototype.toDeg = function () { // convert radians to degrees
+    return this * 180 / pi;
+}
+
+Number.prototype.fixLon = function () { // keep longitude in range -180 to 180
+    lon = this;
+    while (lon < -180) {
+        lon += 360;
+    }
+    while (lon > 180) {
+        lon -= 360;
+    }
+    return parseFloat(lon);
+
+}
+
+
+///////////////////////////////////////
+// 
+
+function distance(lata, lona, latb, lonb) { // great circle distance (km)
+    return Math.acos(Math.sin(lata) * Math.sin(latb) + Math.cos(lata) * Math.cos(latb) * Math.cos(lonb - lona)) * 6371;
+}
+
+function bearing(lata, lona, latb, lonb) { // initial great circle bearing (rad)
+    return Math.atan2(Math.sin(lonb - lona) * Math.cos(latb), Math.cos(lata) * Math.sin(latb) - Math.sin(lata) * Math.cos(latb) * Math.cos(lonb - lona))
+}
+
+function destination(lata, lona, dist, brng) { // destination along great circle.  returns values in degrees
+    var latb = Math.asin(Math.sin(lata) * Math.cos(dist / 6371) + Math.cos(lata) * Math.sin(dist / 6371) * Math.cos(brng));
+    var lonb = lona + Math.atan2(Math.sin(brng) * Math.sin(dist / 6371) * Math.cos(lata), Math.cos(dist / 6371) - Math.sin(lata) * Math.sin(latb));
+    return [180 * latb / pi, 180 * lonb / pi]
+
+}
+
+function destinationr(lata, lona, dist, brng) { // destination along great circle.  returns value in radians
+    var latb = Math.asin(Math.sin(lata) * Math.cos(dist / 6371) + Math.cos(lata) * Math.sin(dist / 6371) * Math.cos(brng));
+    var lonb = lona + Math.atan2(Math.sin(brng) * Math.sin(dist / 6371) * Math.cos(lata), Math.cos(dist / 6371) - Math.sin(lata) * Math.sin(latb));
+    return [latb, lonb]
+
+}
+
+
+
+/////////////////////////////////////////
+
+
+function failureCB(object) {
+    alert('load failed');
+}
+
+      
+  </script> 
+
+
+
+
+    
+  <script>
+    
+    (function () {
+      var formEl = document.getElementById("fishinghit-movelatlong");
+      
+      function submitHandler(ev) {
+        ev.preventDefault();
+        
+        var lat = document.getElementById("fishinghit-movelatlong-lat");
+        var lng = document.getElementById("fishinghit-movelatlong-long");
+        var latNumber = lat.value ? parseFloat(lat.value, 10) : null;
+        var longNumber = lng.value ? parseFloat(long.value, 10) : null;
+        
+        pm.cent.setLoc(latNumber, longNumber);
+        pm.rad.setLoc(latNumber - 1, longNumber - 1);
+        pm.setRad();
+        pm.drawPolygon();
+      }  
+      
+      formEl.addEventListener("submit", submitHandler, false);
+    }());
+    
+  </script>
+
+        
+       
+  </body> 
+</html> 
+ 
+ ​

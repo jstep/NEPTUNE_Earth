@@ -1,0 +1,112 @@
+      @font-face {
+            font-family: 'Open Sans';
+            font-style: normal;
+            font-weight: 400;
+            src: local('Open Sans'), local('OpenSans'), url(http://themes.googleusercontent.com/static/fonts/opensans/v6/cJZKeOuBrn4kERxqtaUH3T8E0i7KZn-EPnyo3HZu7kw.woff) format('woff');
+      } 
+      @font-face {
+        font-family: 'Raleway';
+        font-style: normal;
+        font-weight: 100;
+        src: local('Raleway Thin'), local('Raleway-Thin'), url(http://themes.googleusercontent.com/static/fonts/raleway/v6/RJMlAoFXXQEzZoMSUteGWD8E0i7KZn-EPnyo3HZu7kw.woff) format('woff');
+      }
+      body {
+        background-image: url(img/pixel-bg.png);
+        background-position: center;
+        bottom: 0;
+        margin: 0;
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+      }
+      hr {
+
+      }
+      select {
+        background: #666;
+        color: #fffff0;
+        padding: 5px;
+        font-size: 16px;
+        line-height: 1;
+        border: 0;
+        border-radius: 0;
+        height: 34px;
+        -webkit-appearance: none;
+      }
+      #titlebox {
+       margin: 0 0 10px 10px;
+      }
+      #title {
+        font-size: 48px;
+        font-family: 'Raleway';
+        text-align: center;
+        color: #68B2FF;
+        margin-bottom: 0px;
+        margin-top: 0px;
+      }
+      #map3d_container {
+        border: none;
+        margin-left:260px;
+        bottom: 0;
+      }
+      #map3d {
+        height: 782px;
+      }
+       #sidebar {
+        font-family: 'Open Sans', sans-serif;
+        font-size: 13px;
+        color: #FFFFF0;
+        /*text-transform: uppercase;*/
+        float: left;
+        width: 250px;
+        height: 100%;
+        margin-bottom: 0;
+        padding-right: 5px;
+        padding-left: 5px;
+        padding-top: 40px;
+        padding-bottom: 40px;
+        background-image: url(img/pixel-bg.png);
+        box-shadow: inset -5px 0 15px -3px black;
+      }
+      #sidebartitle {
+        font-size: 30px;
+        font-family: 'Raleway';
+        text-align: center;
+        margin-top: -15px;
+        color: #FF69B4;
+      }
+      form {
+        bottom: 0;
+      }
+      input {
+        outline: none;
+        padding-left: .5em;
+        background-image: url("http://subtlepatterns.com/patterns/tweed.png");
+           -moz-box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.1);
+        -webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.1);
+                box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.1);
+        -webkit-border-radius: 10px;
+           -moz-border-radius: 10px;
+                border-radius: 10px;
+                border:none;
+      }
+      input:focus {
+        background-image: url("http://www.accuracyinternational.com/images/swatches/Black-Swatch.jpg");
+      }
+      #smallprint {
+        text-align: right;
+        color: inherit;
+        font-family: 'Open Sans', sans-serif;
+        font-size: 12px;
+        color: #848485;
+        font-style: italic;
+        margin-top: 30px; 
+        margin-right: 30px;       
+      }
+      #smallprint a {
+        color: #993f6c;
+        text-decoration: none;
+      }
+      #smallprint a:hover {
+        color: #FF69B4;
+        text-decoration: none;
+      }
